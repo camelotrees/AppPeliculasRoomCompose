@@ -7,11 +7,19 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.apppeliculasroomcompose.data.PeliculaDatabase
+import com.example.apppeliculasroomcompose.presentacion.PantallaEditarPelicula
+import com.example.apppeliculasroomcompose.presentacion.PantallaPeliculas
 import com.example.apppeliculasroomcompose.ui.theme.AppPeliculasRoomComposeTheme
+import com.example.apppeliculasroomcompose.viewmodel.PeliculaViewModel
+import com.example.apppeliculasroomcompose.viewmodel.PeliculaViewModelFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -19,29 +27,41 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AppPeliculasRoomComposeTheme {
+                val database = PeliculaDatabase.obtenerInstancia(applicationContext)
+                val factory = PeliculaViewModelFactory(database.peliculaDao())
+                val peliculaViewModel: PeliculaViewModel = viewModel(factory = factory)
+                val navController = rememberNavController()
+
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
+                    NavHost(
+                        navController = navController,
+                        startDestination = "inicio",
                         modifier = Modifier.padding(innerPadding)
-                    )
+                    ) {
+                        composable("inicio") {
+                            PantallaPeliculas(
+                                navController = navController,
+                                viewModel = peliculaViewModel
+                            )
+                        }
+                        composable(
+                            route = "editar/{id}",
+                            arguments = listOf(
+                                navArgument("id") {
+                                    type = NavType.IntType
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val id = backStackEntry.arguments?.getInt("id") ?: 0
+                            PantallaEditarPelicula(
+                                id = id,
+                                navController = navController,
+                                viewModel = peliculaViewModel
+                            )
+                        }
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    AppPeliculasRoomComposeTheme {
-        Greeting("Android")
     }
 }
